@@ -1,0 +1,85 @@
+name: Build Secured - Dowrat Watani Flutter APK
+
+# 1. تشغيل السكريبت تلقائياً عند الدفع بالملفات لفرع main أو يدوياً
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # يتيح لك تشغيله يدوياً من الهاتف في أي وقت
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      # 2. تثبيت جافا بالإصدار الحديث JDK 21 (توزيعة Temurin الاحترافية)
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      # 3. تثبيت الفلاتر في السحاب
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      # 4. جلب حزم ومكتبات الفلاتر مباشرة من الـ Root
+      - name: Install Flutter Dependencies
+        run: |
+          flutter pub get
+
+      # 5. ميزة الحماية المتقدمة: حجب تصوير الشاشة وتسجيل الفيديو (FLAG_SECURE)
+      - name: 1. Screen Security (Anti-Screenshot & Video)
+        run: |
+          # البحث تلقائياً عن ملف النشاط الرئيسي للأندرويد وحقن كود الحماية
+          FILE_PATH=$(find android/app/src/main -name "MainActivity.kt" -o -name "MainActivity.java" | head -n 1)
+          
+          if [[ "$FILE_PATH" == *".kt" ]]; then
+            # إذا كان الملف بلغة Kotlin
+            sed -i '/import io.flutter.embedding.android.FlutterActivity/a import android.view.WindowManager\nimport android.os.Bundle' $FILE_PATH
+            sed -i '/class MainActivity/a \    override fun onCreate(savedInstanceState: Bundle?) {\n        super.onCreate(savedInstanceState) \n        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowingManager.LayoutParams.FLAG_SECURE)\n    }' $FILE_PATH
+          else
+            # إذا كان الملف بلغة Java
+            sed -i '/import io.flutter.embedding.android.FlutterActivity/a import android.view.WindowManager;\nimport android.os.Bundle;' $FILE_PATH
+            sed -i '/public class MainActivity/a \    @Override\n    protected void onCreate(Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n        getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);\n    }' $FILE_PATH
+          fi
+          echo "Screen Security (FLAG_SECURE) Injected Successfully!"
+
+      # 6. ميزة الحماية من الهندسة العكسية (Obfuscation) وبناء الـ APK
+      - name: 2. Build Protected Flutter APK
+        run: |
+          # أمر فلاتر لتشفير الأكواد وتعميتها وحذف الكلمات الدلالية من ملف الـ Dart النهائي
+          flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols
+
+      # 7. توقيع التطبيق يدوياً بمفاتيحك الخاصة (Keystore) لضمان الأمان الكامل
+      - name: 3. Sign Flutter APK manually
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo $KEYSTORE_BASE64 | base64 --decode > my-release-key.keystore
+          BUILD_TOOLS_DIR=$(ls -1d /usr/local/lib/android/sdk/build-tools/* | grep -E '[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
+          
+          APK_PATH="build/app/outputs/flutter-apk/app-release.apk"
+          ALIGNED_APK_PATH="build/app/outputs/flutter-apk/app-release-aligned.apk"
+          SIGNED_APK_PATH="build/app/outputs/flutter-apk/MediGo-Flutter-V${{ github.run_number }}-Secured.apk"
+          
+          $BUILD_TOOLS_DIR/zipalign -v -p 4 $APK_PATH $ALIGNED_APK_PATH
+          $BUILD_TOOLS_DIR/apksigner sign --ks my-release-key.keystore --ks-pass "pass:$KEYSTORE_PASSWORD" --key-pass "pass:$KEY_PASSWORD" --ks-key-alias "$KEY_ALIAS" --out $SIGNED_APK_PATH $ALIGNED_APK_PATH
+          
+          echo "SIGNED_APK_PATH=$SIGNED_APK_PATH" >> $GITHUB_ENV
+
+      # 8. رفع ملف الـ APK المحمي والجاهز للتنزيل على هاتفك فوراً
+      - name: 4. Upload Secured & Signed APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dowrat-Watani-Flutter-V${{ github.run_number }}
+          path: ${{ env.SIGNED_APK_PATH }}
+
