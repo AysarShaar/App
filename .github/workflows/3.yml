@@ -1,0 +1,44 @@
+name: Unzip Files Automatically
+
+on:
+  workflow_dispatch :
+    paths:
+      - '**.zip' # يعمل الكود فقط عند رفع ملف مضغوط
+
+jobs:
+  unzip-process:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # لإعطاء الصلاحية برفع الملفات الجديدة للمستودع
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Unzip and Overwrite
+        run: |
+          # البحث عن جميع ملفات zip وفك ضغطها
+          # العلم -o يعني overwrite (استبدال الملفات القديمة تلقائياً)
+          for file in *.zip; do
+            if [ -f "$file" ]; then
+              echo "Processing $file..."
+              unzip -o "$file" -d ./
+            fi
+          done
+
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # إضافة الملفات الناتجة فقط (تجنب إضافة الـ zip مرة أخرى إذا كنت ستحذفه)
+          git add .
+          
+          # التحقق إذا كان هناك تغييرات فعلاً لتجنب الخطأ في حال لم يتغير شيء
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto unzip and update files from ZIP"
+            git push
+          fi
+ 
