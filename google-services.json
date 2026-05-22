@@ -1,0 +1,69 @@
+{
+  "project_info": {
+    "project_number": "114486961622",
+    "firebase_url": "https://gen-lang-client-0923845419-default-rtdb.firebaseio.com",
+    "project_id": "gen-lang-client-0923845419",
+    "storage_bucket": "gen-lang-client-0923845419.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:114486961622:android:60d5152824e0c12240b077",
+        "android_client_info": {
+          "package_name": "com.dawrat.watani"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "114486961622-r4oimeti5bin1ctjeadaaunhfuf3rff0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD-xjatNr1LqHNAei9udCDx3HunnwzHYYk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "114486961622-r4oimeti5bin1ctjeadaaunhfuf3rff0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:114486961622:android:94413d81a2e4441e40b077",
+        "android_client_info": {
+          "package_name": "com.kalamoon.med"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "114486961622-r4oimeti5bin1ctjeadaaunhfuf3rff0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD-xjatNr1LqHNAei9udCDx3HunnwzHYYk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "114486961622-r4oimeti5bin1ctjeadaaunhfuf3rff0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
