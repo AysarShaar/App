@@ -32,23 +32,19 @@ jobs:
         run: |
           flutter pub get
 
-      # 4. (تم التقديم هنا) توليد مجلد أندرويد بالمعرّف الصحيح com.dawrat.watani أولاً
+      # 4. توليد مجلد أندرويد بالمعرّف الصحيح com.dawrat.watani
       - name: Auto-Generate Android Project Structure
         run: |
           echo "Generating clean Android project structure..."
           flutter create . --project-name=national_quiz_app --org=com.dawrat --platforms=android
           flutter pub get
 
-      # 5. خطوة حاقن الفايربيس: تعمل الآن بأمان لأن مجلد الأندرويد أصبح موجوداً
+      # 5. خطوة حاقن الفايربيس الآمنة والمباشرة بدون تعديل نصوص ملفات الجرادل
       - name: Inject Firebase Google Services Config
         run: |
           if [ -f "google-services.json" ]; then
             echo "google-services.json found! Injecting into android/app/..."
             cp google-services.json android/app/
-            
-            # إضافة سطر تطبيق الفايربيس في ملفات الجرادل التي تم توليدها
-            sed -i '/plugins {/a \    id("com.google.gms.google-services") version "4.4.1" apply false' android/build.gradle
-            sed -i '/plugins {/a \    id("com.google.gms.google-services")' android/app/build.gradle
           else
             echo "Warning: google-services.json not found in root. If you use Firebase, build might fail."
           fi
@@ -73,7 +69,7 @@ jobs:
 
           if [[ "$FILE_PATH" == *".kt" ]]; then
             sed -i '/import io.flutter.embedding.android.FlutterActivity/a import android.view.WindowManager\nimport android.os.Bundle' $FILE_PATH
-            sed -i '/class MainActivity/a \    override fun onCreate(savedInstanceState: Bundle?) {\n        super.onCreate(savedInstanceState) \n        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)\n    }' $FILE_PATH
+            sed -i '/class MainActivity/a \    override fun onCreate(savedInstanceState: Bundle?) {\n        super.onCreate(savedInstanceState) \n        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowingManager.LayoutParams.FLAG_SECURE)\n    }' $FILE_PATH
           else
             sed -i '/import io.flutter.embedding.android.FlutterActivity/a import android.view.WindowManager;\nimport android.os.Bundle;' $FILE_PATH
             sed -i '/public class MainActivity/a \    @Override\n    protected void onCreate(Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n        getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);\n    }' $FILE_PATH
@@ -111,3 +107,4 @@ jobs:
         with:
           name: Dowrat-Watani-Flutter-V${{ github.run_number }}
           path: ${{ env.SIGNED_APK_PATH }}
+
