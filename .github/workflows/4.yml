@@ -1,0 +1,33 @@
+name: Generate Android Keystore
+
+on:
+  workflow_dispatch:
+    inputs:
+      keystore_password:
+        description: 'كلمة مرور ملف المفاتيح (يجب أن تتكون من 6 أحرف على الأقل)'
+        required: true
+        default: '123456'
+      key_alias:
+        description: 'الاسم المستعار (Alias) للمفتاح'
+        required: true
+        default: 'my-key-alias'
+
+jobs:
+  generate-keystore:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          
+      - name: Generate Keystore
+        run: |
+          keytool -genkeypair -v -keystore my-release-key.keystore -alias ${{ github.event.inputs.key_alias }} -keyalg RSA -keysize 2048 -validity 10000 -storepass ${{ github.event.inputs.keystore_password }} -keypass ${{ github.event.inputs.keystore_password }} -dname "CN=QuizApp, OU=Dev, O=QuizApp, L=City, ST=State, C=SY"
+          
+      - name: Upload Keystore Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-release-key.keystore
+          path: my-release-key.keystore
