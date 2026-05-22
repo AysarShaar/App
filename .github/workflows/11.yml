@@ -14,7 +14,7 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      # 1. تثبيت جافا بالإصدار الحديث JDK 21
+      # 1. تثبيت جافا بالإصدار الحديث JDK 21 (توزيعة Temurin الاحترافية)
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -27,33 +27,33 @@ jobs:
         with:
           channel: 'stable'
 
-      # 3. جلب حزم ومكتبات الفلاتر
+      # 3. جلب حزم ومكتبات الفلاتر مباشرة من الـ Root
       - name: Install Flutter Dependencies
         run: |
           flutter pub get
 
-      # 4. توليد مجلد أندرويد بالمعرّف الصحيح com.dawrat.watani
+      # 4. (تم التقديم هنا) توليد مجلد أندرويد بالمعرّف الصحيح com.dawrat.watani أولاً
       - name: Auto-Generate Android Project Structure
         run: |
           echo "Generating clean Android project structure..."
           flutter create . --project-name=national_quiz_app --org=com.dawrat --platforms=android
           flutter pub get
 
-      # 5. خطوة حاقن الفايربيس: إذا قمت برفع ملف google-services.json للـ Root سيتم نقله تلقائياً لمكانه الصحيح
+      # 5. خطوة حاقن الفايربيس: تعمل الآن بأمان لأن مجلد الأندرويد أصبح موجوداً
       - name: Inject Firebase Google Services Config
         run: |
           if [ -f "google-services.json" ]; then
             echo "google-services.json found! Injecting into android/app/..."
             cp google-services.json android/app/
             
-            # إضافة سطر تطبيق الفايربيس في ملف build.gradle الخاص بـ الاندرويد سحابياً
+            # إضافة سطر تطبيق الفايربيس في ملفات الجرادل التي تم توليدها
             sed -i '/plugins {/a \    id("com.google.gms.google-services") version "4.4.1" apply false' android/build.gradle
             sed -i '/plugins {/a \    id("com.google.gms.google-services")' android/app/build.gradle
           else
             echo "Warning: google-services.json not found in root. If you use Firebase, build might fail."
           fi
 
-      # 6. خطوة خاصة بـ Hive: تشغيل التوليد التلقائي
+      # 6. خطوة خاصة بـ Hive: تشغيل التوليد التلقائي إذا دعت الحاجة
       - name: Run Build Runner (Hive Generation)
         run: |
           if grep -q "@HiveType" -r lib/ 2>/dev/null; then
@@ -85,13 +85,13 @@ jobs:
         run: |
           flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols
 
-      # 9. توقيع التطبيق يدوياً بمفاتيحك الخاصة (Keystore)
+      # 9. توقيع التطبيق يدوياً بملف الـ Keystore الخاص بك
       - name: Sign Flutter APK manually
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
           echo $KEYSTORE_BASE64 | base64 --decode > my-release-key.keystore
           BUILD_TOOLS_DIR=$(ls -1d /usr/local/lib/android/sdk/build-tools/* | grep -E '[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
@@ -105,7 +105,7 @@ jobs:
           
           echo "SIGNED_APK_PATH=$SIGNED_APK_PATH" >> $GITHUB_ENV
 
-      # 10. رفع ملف الـ APK المحمي والجاهز للتنزيل فوراً
+      # 10. رفع ملف الـ APK المحمي والموقّع الجاهز للتنزيل
       - name: Upload Secured & Signed APK
         uses: actions/upload-artifact@v4
         with:
