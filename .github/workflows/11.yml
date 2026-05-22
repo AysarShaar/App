@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
+  workflow_dispatch: # يتيح لك تشغيله يدوياً من الهاتف في أي وقت
 
 jobs:
   build:
@@ -39,10 +39,15 @@ jobs:
           flutter create . --project-name=national_quiz_app --org=com.dawrat --platforms=android
           flutter pub get
 
-      # 5. خطوة خاصة بـ Hive: توليد ملفات الـ TypeAdapters تلقائياً في السحاب
+      # 5. خطوة خاصة بـ Hive: تشغيل التوليد فقط إذا كانت هناك ملفات تحتاج لذلك من الكود
       - name: Run Build Runner (Hive Generation)
         run: |
-          flutter pub run build_runner build --delete-conflicting-outputs --if-present
+          if grep -q "@HiveType" -r lib/ 2>/dev/null; then
+            echo "Hive models detected. Running build_runner..."
+            flutter pub run build_runner build --delete-conflicting-outputs
+          else
+            echo "No Hive models found yet. Skipping build_runner safely."
+          fi
 
       # 6. ميزة الحماية المتقدمة: حجب تصوير الشاشة وتسجيل الفيديو (FLAG_SECURE)
       - name: Screen Security (Anti-Screenshot & Video)
