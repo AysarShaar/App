@@ -39,14 +39,14 @@ jobs:
           flutter create . --project-name=national_quiz_app --org=com.dawrat --platforms=android
           flutter pub get
 
-      # 5. خطوة حاقن الفايربيس الآمنة والمباشرة بدون تعديل نصوص ملفات الجرادل
+      # 5. خطوة حاقن الفايربيس الآمنة والمباشرة
       - name: Inject Firebase Google Services Config
         run: |
           if [ -f "google-services.json" ]; then
             echo "google-services.json found! Injecting into android/app/..."
             cp google-services.json android/app/
           else
-            echo "Warning: google-services.json not found in root. If you use Firebase, build might fail."
+            echo "Warning: google-services.json not found in root."
           fi
 
       # 6. خطوة خاصة بـ Hive: تشغيل التوليد التلقائي إذا دعت الحاجة
@@ -69,17 +69,17 @@ jobs:
 
           if [[ "$FILE_PATH" == *".kt" ]]; then
             sed -i '/import io.flutter.embedding.android.FlutterActivity/a import android.view.WindowManager\nimport android.os.Bundle' $FILE_PATH
-            sed -i '/class MainActivity/a \    override fun onCreate(savedInstanceState: Bundle?) {\n        super.onCreate(savedInstanceState) \n        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowingManager.LayoutParams.FLAG_SECURE)\n    }' $FILE_PATH
+            sed -i '/class MainActivity/a \    override fun onCreate(savedInstanceState: Bundle?) {\n        super.onCreate(savedInstanceState) \n        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)\n    }' $FILE_PATH
           else
             sed -i '/import io.flutter.embedding.android.FlutterActivity/a import android.view.WindowManager;\nimport android.os.Bundle;' $FILE_PATH
             sed -i '/public class MainActivity/a \    @Override\n    protected void onCreate(Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n        getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);\n    }' $FILE_PATH
           fi
           echo "Screen Security Injected Successfully!"
 
-      # 8. ميزة الحماية من الهندسة العكسية وبناء الـ APK
+      # 8. (تم التعديل هنا) تشغيل البناء بنمط التفصيل الكامل لإظهار أخطاء الأكواد
       - name: Build Protected Flutter APK
         run: |
-          flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols
+          flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols --verbose
 
       # 9. توقيع التطبيق يدوياً بملف الـ Keystore الخاص بك
       - name: Sign Flutter APK manually
@@ -87,7 +87,7 @@ jobs:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           echo $KEYSTORE_BASE64 | base64 --decode > my-release-key.keystore
           BUILD_TOOLS_DIR=$(ls -1d /usr/local/lib/android/sdk/build-tools/* | grep -E '[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
